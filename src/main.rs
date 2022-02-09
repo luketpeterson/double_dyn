@@ -1,139 +1,144 @@
 
-use core::any::{Any, TypeId};
-use std::collections::{HashMap};
-use std::time::{Duration, SystemTime};
 
-struct Registry {
-    map: HashMap<(TypeId, TypeId), fn(&i32, &i32)>
+//I want to support:
+//1. an arbitrary function name and signiture
+//2. both stand-alone funtions as well as methods
+//3. Functions where both dyns are of the same type as well as functions where A and B have different types
+//4. Adding additional pairs across multiple impl blocks
+//
+//5. Multiple function within the same block?
+//6. Test that it works with and without pub
+
+//Thoughts: I probably need to make the top-level fn declaration be one macro, and the impls
+// be another.  Therefore there should be a symbol connecting them.
+
+//The problem is that somehow I need to know what the arguments are in the impl block
+// Is it possible that I can just use the function / method names??
+
+//=====================================================================================
+//double_dyn_fn manual expansion
+//=====================================================================================
+
+//This macro generates:
+// the top-level fn that calls into the min.ddyn_NumTrait_level_one_min_max_fn(val, max);
+// the trait definition for ddyn_NumTrait_level_one_min_max
+
+// Alternately, instead of the double_dyn_fn! macro, we might want something that intercepts the impl for a
+// a method on A.  So it emits all 
+
+//For example, 
+/*
+
+trait NumTrait {
+    fn some_func(&self, other: &dyn NumTrait);
 }
 
-impl Registry {
+impl NumTrait for i32 {
 
-    fn new() -> Self {
-        Self {
-            map: HashMap::new()
-        }
+    fn some_func(&self, other: &dyn NumTrait) {
+        other.ddyn_ATrait_i32_level_two_some_func(self);
     }
+}
+*/
 
-    fn register_func<A: 'static, B: 'static>(&mut self, f: fn(&A, &B)) {
+// double_dyn_fn!{
+//     fn min_max(val: i32, min: &dyn #A, max: &dyn #B) -> Result<i32, String>;
+// }
 
-        let type_id_a = TypeId::of::<A>();
-        let type_id_b = TypeId::of::<B>();
-        
-        let cast_f = unsafe{ std::mem::transmute(f) };
-        self.map.insert((type_id_a, type_id_b), cast_f);
+//=====================================================================================
+//double_dyn_fn manual expansion
+//=====================================================================================
+
+fn min_max(val: i32, min: &dyn Ddyn_LevelOne_min_max, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
+    min.ddyn_level_one_min_max_fn(val, max)
+}
+
+//=====================================================================================
+//double_dyn_impl test
+//=====================================================================================
+
+
+//This macro generates:
+// For every ATYPE, a trait definition for ddyn_NumTrait_level_two_min_max_ATYPE, e.g. ddyn_NumTrait_level_two_min_max_i32
+// For every AType, the trait impl for ddyn_NumTrait_level_one_min_max, for every A, that calls max.ddyn_NumTrait_level_two_min_max_i32(val, min:i32);
+// For every AB Combo, a trait impl for ddyn_NumTrait_level_two_min_max_i32
+
+// double_dyn_impl!{
+
+//     (i32, i32)
+//     {
+//         fn min_max(val: i32, min: &i32, max: &i32) -> Result<i32, String> {
+//             Ok(2)
+//         }
+//     }
+
+//     (f32, f32)
+//     {
+//         fn min_max(val: i32, min: &f32, max: &f32) -> Result<i32, String> {
+//             Ok(3)
+//         }
+//     }
+
+//     #[commutative]
+//     (i32, f32)
+//     {
+//         fn min_max(val: i32, min: &i32, max: &f32) -> Result<i32, String> {
+//             Ok(4)
+//         }
+//     }
+// }
+
+//=====================================================================================
+//double_dyn_impl manual expansion
+//=====================================================================================
+
+trait Ddyn_LevelOne_min_max {
+    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String>;
+}
+
+trait Ddyn_LevelTwo_min_max {
+    //A function for each B type
+    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String>;
+    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String>;
+}
+
+impl Ddyn_LevelOne_min_max for i32 {
+    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
+        max.ddyn_level_two_min_max_i32_fn(val, self)
     }
+}
 
-    fn call_func(&self, a: &dyn Any, b: &dyn Any) {
-
-        //Retrieve the function pointer
-        let type_id_a = a.type_id();
-        let type_id_b = b.type_id();
-        
-        let generic_f = self.map.get(&(type_id_a, type_id_b)).unwrap();
-
-        let cast_a = unsafe{ &*(a as *const dyn Any as *const i32) };
-        let cast_b = unsafe{ &*(b as *const dyn Any as *const i32) };
-        generic_f(cast_a, cast_b);
+impl Ddyn_LevelOne_min_max for f32 {
+    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
+        max.ddyn_level_two_min_max_f32_fn(val, self)
     }
 }
 
-fn pair_func_a(a: &i32, b: &i32) {
-    println!("func_a({}, {})", a, b);
+impl Ddyn_LevelTwo_min_max for i32 {
+    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String> {
+        Ok(2)
+    }
+    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String> {
+        Ok(4)
+    }
 }
 
-fn pair_func_b(a: &i32, b: &char) {
-    println!("func_b({}, {})", a, b);
+impl Ddyn_LevelTwo_min_max for f32 {
+    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String> {
+        Ok(4)
+    }
+    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String> {
+        Ok(3)
+    }
 }
 
-fn pair_func_c(a: &char, b: &i32) {
-    println!("func_c({}, {})", a, b);
-}
+//=====================================================================================
+// main
+//=====================================================================================
 
 fn main() {
 
-    let mut resistry = Registry::new();
 
-    resistry.register_func(pair_func_a);
-    resistry.register_func(pair_func_b);
-    resistry.register_func(pair_func_c);
-
-    resistry.call_func(&5, &1);
-    resistry.call_func(&5, &'b');
-    resistry.call_func(&'c', &1);
-
-    static_baseline();
-    dyn_baseline();
-    double_dyn_time();
-}
-
-//-----------------------------------------
-//Benchmarks
-//-----------------------------------------
-
-fn static_func(a: &i32, b: &i32) {
-    //Just to prevent the optimizer from eliminating the call
-    if *a == 99999 {
-        println!("single_static_a({}, {})", a, b);
-    }
-}
-
-fn static_baseline() {
-
-    let timer_start = SystemTime::now();
-
-    for i in 0..1000000 {
-        static_func(&i, &i);
-    }
-
-    println!("Static Baseline Time = {:?}", timer_start.elapsed().unwrap_or(Duration::new(0, 0))); 
-}
-
-trait SingleDyn : Any {
-    fn dyn_func(&self, b: &i32);
-}
-
-impl SingleDyn for i32 {
-    fn dyn_func(&self, b: &i32) {
-        //Just to prevent the optimizer from eliminating the call
-        if *self == 99999 {
-            println!("single_dyn_a({}, {})", self, b);
-        }
-    }
-}
-
-fn single_dyn_dispatch(a: &dyn SingleDyn, b: &i32) {
-    a.dyn_func(b); //I suspect the dyn dispatch might be being optimized away :-(
-}
-
-fn dyn_baseline() {
-
-    let timer_start = SystemTime::now();
-
-    for i in 0..1000000 {
-        single_dyn_dispatch(&i, &i);
-    }
-
-    println!("Dyn Baseline Time = {:?}", timer_start.elapsed().unwrap_or(Duration::new(0, 0))); 
-}
-
-fn double_dyn_func(a: &i32, b: &i32) {
-    //Just to prevent the optimizer from eliminating the call
-    if *a == 99999 {
-        println!("double_dyn_a({}, {})", a, b);
-    }
-}
-
-fn double_dyn_time() {
-
-    let mut resistry = Registry::new();
-    resistry.register_func(double_dyn_func);
-    
-    let timer_start = SystemTime::now();
-
-    for i in 0..1000000 {
-        resistry.call_func(&i, &i);
-    }
-
-    println!("Double Dyn Time = {:?}", timer_start.elapsed().unwrap_or(Duration::new(0, 0))); 
+    let val = min_max(5, &2.0, &5.0).unwrap();
+    println!("{}", val);
 }
