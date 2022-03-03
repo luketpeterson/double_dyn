@@ -374,7 +374,7 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
     
     //Transmute all of the function prototypes into methods for the ATrait
     let mut l1_sig_tokens = TokenStream::new();
-    let mut l1_sigs = vec![];
+    let mut l1_sigs = HashMap::new();
     for (fn_name, (sig, possible_a_args, _possible_b_args)) in fn_sigs.iter() {
 
         //Turns "fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;" into
@@ -388,8 +388,8 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
             arg_type: quote! { &self }
         });
 
-        let sig_tokens = render_fn_signature(new_sig)?;
-        l1_sigs.push((fn_name.clone(), sig_tokens.clone()));
+        let sig_tokens = render_fn_signature(new_sig.clone())?;
+        l1_sigs.insert(fn_name.clone(), (new_sig, sig_tokens.clone()));
         l1_sig_tokens.extend(sig_tokens);
         l1_sig_tokens.extend(quote! { ; });    
     }
@@ -474,7 +474,7 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
     
         //Build up the tokens for the l1 methods, for the "impl TraitA for TypeA"
         let mut l1_impls = TokenStream::new();
-        for (orig_fn_name, l1_sig_tokens) in l1_sigs.iter() {
+        for (orig_fn_name, (_l1_sig, l1_sig_tokens)) in l1_sigs.iter() {
             let (prototype_sig, possible_a_args, possible_b_args) = fn_sigs.get(orig_fn_name).unwrap();
 
             //Get the name of the B arg, so we can use it to call the l2 function
@@ -533,6 +533,36 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
     
             result_tokens.extend(b_trait_impl);
         }
+    }
+
+    // --4-- Emit the top-level function(s)
+    for (orig_fn_name, (sig, possible_a_args, _possible_b_args)) in fn_sigs.iter() {
+
+        let sig_tokens = render_fn_signature(sig.clone())?;
+        let (l1_sig, _l1_sig_tokens) = l1_sigs.get(orig_fn_name).unwrap();
+        let l1_fn_name = l1_sig.fn_name.clone();
+
+        //Get the name of the A arg, so we can use it to call the l1 trait method
+        let a_arg_name = sig.args[possible_a_args[0]].arg_name.clone().unwrap();
+
+        //We'll pass all of the other args to the l1 method
+        let mut other_arg_name_tokens = TokenStream::new();
+        for (i, arg) in sig.args.iter().enumerate() {
+            if i != possible_a_args[0] {
+                let arg_name = arg.arg_name.clone().unwrap();
+                other_arg_name_tokens.extend(quote! {
+                    #arg_name,
+                });
+            }
+        }
+
+        let fn_tokens = quote! {
+            #sig_tokens {
+                #a_arg_name.#l1_fn_name(#other_arg_name_tokens)
+            }
+        };
+
+        result_tokens.extend(fn_tokens);
     }
 
     Ok(result_tokens.into())

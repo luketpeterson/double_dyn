@@ -16,86 +16,77 @@ use double_dyn_macros::double_dyn_fn;
 //The problem is that somehow I need to know what the arguments are in the impl block
 // Is it possible that I can just use the function / method names??
 
-double_dyn_fn!{
-    type A: MyTraitA;
-    type B: MyTraitB;
-
-    fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;
-    fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB>;
-
-    impl for <i32, String>
-    {
-        fn min_max(val: i32, min: &i32, max: &String) -> Result<i32, String> {
-            let max_as_int = max.parse::<i32>().unwrap();
-
-            if val < *min {Ok(*min)} else
-            if val > max_as_int {Ok(max_as_int)} else
-            {Ok(val)}
-        }
-
-        fn multiply(a: &i32, b: &String) -> Box<dyn MyTraitB> {
-            let multiplied_val = *a * b.parse::<i32>().unwrap();
-            Box::new(multiplied_val.to_string())
-        }
-    }
-
-    impl for <i32, f32>
-    {
-        fn min_max(val: i32, min: &#A, max: &#B) -> Result<i32, String> {
-            if (val as #A) < *min {Ok(*min as i32)} else
-            if (val as #B) > *max {Ok(*max as i32)} else
-            {Ok(val)}
-        }
-
-        fn multiply(a: &#A, b: &#B) -> Box<dyn MyTraitB> {
-            Box::new((*a as #B) * *b)
-        }
-    }
-
-}
-
 // double_dyn_fn!{
-//     type A: MyTrait;
-//     type B: MyTrait;
+//     type A: MyTraitA;
+//     type B: MyTraitB;
 
-//     fn min_max(val: i32, min: &dyn MyTrait, max: &dyn MyTrait) -> Result<i32, String>;
-//     fn multiply(min: &dyn MyTrait, max: &dyn MyTrait) -> Box<dyn MyTrait>;
+//     fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;
+//     fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB>;
 
-//     impl for <i32, i32>
+//     impl for <i32, String>
 //     {
-//         fn min_max(val: i32, min: &i32, max: &i32) -> Result<i32, String> {
+//         fn min_max(val: i32, min: &i32, max: &String) -> Result<i32, String> {
+//             let max_as_int = max.parse::<i32>().unwrap();
+
 //             if val < *min {Ok(*min)} else
-//             if val > *max {Ok(*max)} else
+//             if val > max_as_int {Ok(max_as_int)} else
 //             {Ok(val)}
 //         }
 
-//         fn multiply(same_min: &i32, same_max: &i32) -> Box<dyn MyTrait> {
-//             Box::new(*same_min * *same_max)
+//         fn multiply(a: &i32, b: &String) -> Box<dyn MyTraitB> {
+//             let multiplied_val = *a * b.parse::<i32>().unwrap();
+//             Box::new(multiplied_val.to_string())
 //         }
 //     }
 
-//     #[commutative]
 //     impl for <i32, f32>
 //     {
-//         fn min_max(val: i32, com_min: &#A, com_max: &#B) -> Result<i32, String> {
-//             if (val as #A) < *com_min {Ok(*com_min as i32)} else
-//             if (val as #B) > *com_max {Ok(*com_max as i32)} else
+//         fn min_max(val: i32, min: &#A, max: &#B) -> Result<i32, String> {
+//             if (val as #A) < *min {Ok(*min as i32)} else
+//             if (val as #B) > *max {Ok(*max as i32)} else
 //             {Ok(val)}
 //         }
 
-//         fn multiply(min: &#A, max: &#B) -> Box<dyn MyTrait> {
-//             Box::new((*min as #B) * *max)
+//         fn multiply(a: &#A, b: &#B) -> Box<dyn MyTraitB> {
+//             Box::new((*a as #B) * *b)
 //         }
 //     }
+
 // }
 
-//TODO.  These need to be emitted by the macro
-fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String> {
-    min.l1_min_max(val, max)
-}
+double_dyn_fn!{
+    type A: MyTrait;
+    type B: MyTrait;
 
-fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB> {
-    a.l1_multiply(b)
+    fn min_max(val: i32, min: &dyn MyTrait, max: &dyn MyTrait) -> Result<i32, String>;
+    fn multiply(min: &dyn MyTrait, max: &dyn MyTrait) -> Box<dyn MyTrait>;
+
+    impl for <i32, i32>
+    {
+        fn min_max(val: i32, min: &i32, max: &i32) -> Result<i32, String> {
+            if val < *min {Ok(*min)} else
+            if val > *max {Ok(*max)} else
+            {Ok(val)}
+        }
+
+        fn multiply(same_min: &i32, same_max: &i32) -> Box<dyn MyTrait> {
+            Box::new(*same_min * *same_max)
+        }
+    }
+
+    #[commutative]
+    impl for <i32, f32>
+    {
+        fn min_max(val: i32, com_min: &#A, com_max: &#B) -> Result<i32, String> {
+            if (val as #A) < *com_min {Ok(*com_min as i32)} else
+            if (val as #B) > *com_max {Ok(*com_max as i32)} else
+            {Ok(val)}
+        }
+
+        fn multiply(min: &#A, max: &#B) -> Box<dyn MyTrait> {
+            Box::new((*min as #B) * *max)
+        }
+    }
 }
 
 //=====================================================================================
@@ -105,24 +96,24 @@ fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB> {
 fn main() {
 
     //Reciprocal Tests
-    // let val = min_max(5, &2, &7).unwrap();
-    // println!("{}", val);
-
-    // let val = min_max(5, &2, &7.0).unwrap();
-    // println!("{}", val);
-
-    // let val = min_max(5, &2.0, &7).unwrap();
-    // println!("{}", val);
-
-    // let val = min_max(5, &2.0, &7.0).unwrap();
-    // println!("{}", val);
-
-    //Separate tests
-    let val = min_max(5, &2, &"7".to_string()).unwrap();
+    let val = min_max(5, &2, &7).unwrap();
     println!("{}", val);
 
-    let val = multiply(&2, &"7".to_string());
-    // println!("{:?}", val); TODO, make it so that I can bound traits
+    let val = min_max(5, &2, &7.0).unwrap();
+    println!("{}", val);
+
+    let val = min_max(5, &2.0, &7).unwrap();
+    println!("{}", val);
+
+    let val = min_max(5, &2.0, &7.0).unwrap();
+    println!("{}", val);
+
+    // //Separate tests
+    // let val = min_max(5, &2, &"7".to_string()).unwrap();
+    // println!("{}", val);
+
+    // let val = multiply(&2, &"7".to_string());
+    // // println!("{:?}", val); TODO, make it so that I can bound traits
 
 }
 
