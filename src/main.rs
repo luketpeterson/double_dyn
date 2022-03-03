@@ -1,4 +1,5 @@
 
+use double_dyn_macros::double_dyn_fn;
 
 //I want to support:
 //1. an arbitrary function name and signiture
@@ -15,121 +16,86 @@
 //The problem is that somehow I need to know what the arguments are in the impl block
 // Is it possible that I can just use the function / method names??
 
-//=====================================================================================
-//double_dyn_fn manual expansion
-//=====================================================================================
+double_dyn_fn!{
+    type A: MyTraitA;
+    type B: MyTraitB;
 
-//This macro generates:
-// the top-level fn that calls into the min.ddyn_NumTrait_level_one_min_max_fn(val, max);
-// the trait definition for ddyn_NumTrait_level_one_min_max
+    fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;
+    fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB>;
 
-// Alternately, instead of the double_dyn_fn! macro, we might want something that intercepts the impl for a
-// a method on A.  So it emits all 
+    impl for <i32, String>
+    {
+        fn min_max(val: i32, min: &i32, max: &String) -> Result<i32, String> {
+            let max_as_int = max.parse::<i32>().unwrap();
 
-//For example, 
-/*
+            if val < *min {Ok(*min)} else
+            if val > max_as_int {Ok(max_as_int)} else
+            {Ok(val)}
+        }
 
-trait NumTrait {
-    fn some_func(&self, other: &dyn NumTrait);
-}
-
-impl NumTrait for i32 {
-
-    fn some_func(&self, other: &dyn NumTrait) {
-        other.ddyn_ATrait_i32_level_two_some_func(self);
+        fn multiply(a: &i32, b: &String) -> Box<dyn MyTraitB> {
+            let multiplied_val = *a * b.parse::<i32>().unwrap();
+            Box::new(multiplied_val.to_string())
+        }
     }
+
+    impl for <i32, f32>
+    {
+        fn min_max(val: i32, min: &#A, max: &#B) -> Result<i32, String> {
+            if (val as #A) < *min {Ok(*min as i32)} else
+            if (val as #B) > *max {Ok(*max as i32)} else
+            {Ok(val)}
+        }
+
+        fn multiply(a: &#A, b: &#B) -> Box<dyn MyTraitB> {
+            Box::new((*a as #B) * *b)
+        }
+    }
+
 }
-*/
 
 // double_dyn_fn!{
-//     fn min_max(val: i32, min: &dyn #A, max: &dyn #B) -> Result<i32, String>;
-// }
+//     type A: MyTrait;
+//     type B: MyTrait;
 
-//=====================================================================================
-//double_dyn_fn manual expansion
-//=====================================================================================
+//     fn min_max(val: i32, min: &dyn MyTrait, max: &dyn MyTrait) -> Result<i32, String>;
+//     fn multiply(min: &dyn MyTrait, max: &dyn MyTrait) -> Box<dyn MyTrait>;
 
-fn min_max(val: i32, min: &dyn Ddyn_LevelOne_min_max, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
-    min.ddyn_level_one_min_max_fn(val, max)
-}
-
-//=====================================================================================
-//double_dyn_impl test
-//=====================================================================================
-
-
-//This macro generates:
-// For every ATYPE, a trait definition for ddyn_NumTrait_level_two_min_max_ATYPE, e.g. ddyn_NumTrait_level_two_min_max_i32
-// For every AType, the trait impl for ddyn_NumTrait_level_one_min_max, for every A, that calls max.ddyn_NumTrait_level_two_min_max_i32(val, min:i32);
-// For every AB Combo, a trait impl for ddyn_NumTrait_level_two_min_max_i32
-
-// double_dyn_impl!{
-
-//     (i32, i32)
+//     impl for <i32, i32>
 //     {
 //         fn min_max(val: i32, min: &i32, max: &i32) -> Result<i32, String> {
-//             Ok(2)
+//             if val < *min {Ok(*min)} else
+//             if val > *max {Ok(*max)} else
+//             {Ok(val)}
 //         }
-//     }
 
-//     (f32, f32)
-//     {
-//         fn min_max(val: i32, min: &f32, max: &f32) -> Result<i32, String> {
-//             Ok(3)
+//         fn multiply(same_min: &i32, same_max: &i32) -> Box<dyn MyTrait> {
+//             Box::new(*same_min * *same_max)
 //         }
 //     }
 
 //     #[commutative]
-//     (i32, f32)
+//     impl for <i32, f32>
 //     {
-//         fn min_max(val: i32, min: &i32, max: &f32) -> Result<i32, String> {
-//             Ok(4)
+//         fn min_max(val: i32, com_min: &#A, com_max: &#B) -> Result<i32, String> {
+//             if (val as #A) < *com_min {Ok(*com_min as i32)} else
+//             if (val as #B) > *com_max {Ok(*com_max as i32)} else
+//             {Ok(val)}
+//         }
+
+//         fn multiply(min: &#A, max: &#B) -> Box<dyn MyTrait> {
+//             Box::new((*min as #B) * *max)
 //         }
 //     }
 // }
 
-//=====================================================================================
-//double_dyn_impl manual expansion
-//=====================================================================================
-
-trait Ddyn_LevelOne_min_max {
-    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String>;
+//TODO.  These need to be emitted by the macro
+fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String> {
+    min.l1_min_max(val, max)
 }
 
-trait Ddyn_LevelTwo_min_max {
-    //A function for each B type
-    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String>;
-    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String>;
-}
-
-impl Ddyn_LevelOne_min_max for i32 {
-    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
-        max.ddyn_level_two_min_max_i32_fn(val, self)
-    }
-}
-
-impl Ddyn_LevelOne_min_max for f32 {
-    fn ddyn_level_one_min_max_fn(&self, val: i32, max: &dyn Ddyn_LevelTwo_min_max) -> Result<i32, String> {
-        max.ddyn_level_two_min_max_f32_fn(val, self)
-    }
-}
-
-impl Ddyn_LevelTwo_min_max for i32 {
-    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String> {
-        Ok(2)
-    }
-    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String> {
-        Ok(4)
-    }
-}
-
-impl Ddyn_LevelTwo_min_max for f32 {
-    fn ddyn_level_two_min_max_i32_fn(&self, val: i32, min: &i32) -> Result<i32, String> {
-        Ok(4)
-    }
-    fn ddyn_level_two_min_max_f32_fn(&self, val: i32, min: &f32) -> Result<i32, String> {
-        Ok(3)
-    }
+fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitB> {
+    a.l1_multiply(b)
 }
 
 //=====================================================================================
@@ -138,7 +104,60 @@ impl Ddyn_LevelTwo_min_max for f32 {
 
 fn main() {
 
+    //Reciprocal Tests
+    // let val = min_max(5, &2, &7).unwrap();
+    // println!("{}", val);
 
-    let val = min_max(5, &2.0, &5.0).unwrap();
+    // let val = min_max(5, &2, &7.0).unwrap();
+    // println!("{}", val);
+
+    // let val = min_max(5, &2.0, &7).unwrap();
+    // println!("{}", val);
+
+    // let val = min_max(5, &2.0, &7.0).unwrap();
+    // println!("{}", val);
+
+    //Separate tests
+    let val = min_max(5, &2, &"7".to_string()).unwrap();
     println!("{}", val);
+
+    let val = multiply(&2, &"7".to_string());
+    // println!("{:?}", val); TODO, make it so that I can bound traits
+
 }
+
+/*
+
+Is there some reason that this won't work for a use case that you'd like to see it to work for?
+
+I did my best to catch as many errors as I could envision and provide reasonable error messages.  But I may have missed some.
+
+
+
+
+Unfortunately this isn't nearly as powerful as I'd like it to be.  Specifically, all of the
+permutations need to be defined in one block, which feels pretty limiting.
+
+Does anyone have a good work around for the lack of https://github.com/rust-lang/rust/issues/44034 
+
+
+//TODO, have a test case for passing a third dyn trait arg that isn't either A or B
+
+//TODO, write a blurb about how args are identified
+
+Tags:
+"Multifunction?" "dyn" "dispatch" "dynamic"
+
+Limitations
+One Block
+Can't use within existing trait
+Visibility qualifiers (e.g. 'pub') must be the same for all functions in the block
+Args must be `&dyn MyTrait`, as opposed to `Box<dyn MyTrait>`
+`where` clauses aren't supported.
+some generics won't work
+
+Thanks
+Thanks to [@dtolnay](https://github.com/dtolnay) and [@h2co3](http://h2co3.github.io/)
+
+*/
+
