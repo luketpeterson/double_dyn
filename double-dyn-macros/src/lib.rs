@@ -26,17 +26,27 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
     // PHASE 1: Parse the Macro Invocation
     //==================================================================================================================
 
-    //Parse the preamble of the invocation to get the trait names
+    //Parse the preamble of the invocation to get the trait names and any trait bounds
     let mut iter = input.into_iter();
     require_keyword(&mut iter, "type", Span::call_site())?;
     require_keyword(&mut iter, "A", Span::call_site())?;
     require_punct(&mut iter, ':', Span::call_site())?;
     let trait_a_name = require_ident(&mut iter, Span::call_site())?;
+    let mut trait_a_bounds = TokenStream::new();
+    while !if_punct(&iter, ';')? {
+        let token = next_token(&mut iter, Span::call_site())?;
+        trait_a_bounds.extend([token]);
+    }
     require_punct(&mut iter, ';', Span::call_site())?;
     require_keyword(&mut iter, "type", Span::call_site())?;
     require_keyword(&mut iter, "B", Span::call_site())?;
     require_punct(&mut iter, ':', Span::call_site())?;
     let trait_b_name = require_ident(&mut iter, Span::call_site())?;
+    let mut trait_b_bounds = TokenStream::new();
+    while !if_punct(&iter, ';')? {
+        let token = next_token(&mut iter, Span::call_site())?;
+        trait_b_bounds.extend([token]);
+    }
     require_punct(&mut iter, ';', Span::call_site())?;
 
     //See if both the A and B traits are the same, because that affects several behaviors later on
@@ -437,7 +447,7 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
     // --1-- Create the definition of the traits
     let mut result_tokens = if single_trait {
         quote! {
-            #pub_qualifiers trait #trait_a_name {
+            #pub_qualifiers trait #trait_a_name #trait_a_bounds {
                 #l1_sig_tokens
 
                 #l2_sig_tokens
@@ -445,11 +455,11 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
         }
     } else {
         quote! {
-            #pub_qualifiers trait #trait_a_name {
+            #pub_qualifiers trait #trait_a_name #trait_a_bounds {
                 #l1_sig_tokens
             }
 
-            #pub_qualifiers trait #trait_b_name {
+            #pub_qualifiers trait #trait_b_name #trait_b_bounds {
                 #l2_sig_tokens
             }
         }

@@ -78,7 +78,7 @@ impl SyntaxError {
     }
 }
 
-fn next_token(iter: &mut TokenIter, err_span : Span) -> Result<TokenTree, SyntaxError> {
+pub(crate) fn next_token(iter: &mut TokenIter, err_span : Span) -> Result<TokenTree, SyntaxError> {
     iter.next().ok_or_else(|| SyntaxError {
         message: "unexpected end of input".to_owned(),
         span: err_span,
@@ -222,7 +222,7 @@ pub(crate) fn require_value(iter: &mut TokenIter, err_span : Span) -> Result<Val
     Err(syntax(token, "expected integer"))
 }
 
-pub(crate) fn if_punct(iter: &mut TokenIter, ch: char) -> Result<bool, SyntaxError> {
+pub(crate) fn if_punct(iter: &TokenIter, ch: char) -> Result<bool, SyntaxError> {
     match iter.clone().next() {
         Some(TokenTree::Punct(punct)) => {
             if punct.as_char() == ch {
