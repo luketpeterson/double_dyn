@@ -1,6 +1,4 @@
 
-use double_dyn_macros::double_dyn_fn;
-
 //I want to support:
 //√1. an arbitrary function name and signiture
 //2. both stand-alone funtions as well as methods
@@ -8,15 +6,6 @@ use double_dyn_macros::double_dyn_fn;
 //4. Adding additional pairs across multiple impl blocks
 //√5. Multiple function within the same block?
 //6. Test that it works with and without pub
-
-
-//=====================================================================================
-// main
-//=====================================================================================
-
-fn main() {
-
-}
 
 /*
 
@@ -33,29 +22,21 @@ permutations need to be defined in one block, which feels pretty limiting.
 Does anyone have a good work around for the lack of https://github.com/rust-lang/rust/issues/44034 
 
 
+
+
+
+
+
 //TODO, have a test case for passing a third dyn trait arg that isn't either A or B
 
 //TODO, write a blurb about how args are identified
 
-//Mention trait bounding, for created traits
+//TODO, Test multiple types in an array
 
-//Explain fundamental limits around generics, and explain the possible exception for B-type implementations
 
 Tags:
-"Multifunction?" "dyn" "dispatch" "dynamic" "object" "oriented"
+"multimethods" "multimethod" "dyn" "argument" "dispatch" "multiple" "dynamic" "parameters" "arguments" "object" "oriented"
 
-Limitations
-One Block
-Can't use within existing trait
-Visibility qualifiers (e.g. 'pub') must be the same for all functions in the block
-Args must be `&dyn MyTrait`, as opposed to `Box<dyn MyTrait>`
-`where` clauses aren't supported.
-some generics won't work
-
-Some errors and warnings will be reported multiple times
-
-Thanks
-Thanks to [@dtolnay](https://github.com/dtolnay) and [@h2co3](http://h2co3.github.io/)
 
 */
 

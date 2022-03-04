@@ -1,4 +1,8 @@
 
+#![crate_name = "double_dyn"]
+
+#![doc = include_str!("../README.md")]
+
 //re-export the macro from double_dyn_macros
 pub use double_dyn_macros::double_dyn_fn;
 
