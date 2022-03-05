@@ -53,7 +53,7 @@ This macro invocation above will define the `MyTraitA` and `MyTraitB` traits, an
 
 As you can see above, multiple `A` and/or `B` types may be specified in using a list in `[square brackets]`.
 
-You may use the concrete types explicitly Within the `impl` block, or alternatively, `#A` and `#B` markers will be replaced by the type they represent.
+You may use the concrete types explicitly Within the `impl` block, or alternatively, `#A` and `#B` markers can be used as aliases within the function signature and implementation body, and they will be replaced by the type(s) they represent at compile time.
 
 ```rust
 # use double_dyn::double_dyn_fn;

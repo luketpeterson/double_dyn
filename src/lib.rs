@@ -4,6 +4,7 @@
 #![doc = include_str!("../README.md")]
 
 //re-export the macro from double_dyn_macros
+/// Emits traits and functions to enable multiple dynamic argument dispatch
 pub use double_dyn_macros::double_dyn_fn;
 
 //=====================================================================================
@@ -84,7 +85,7 @@ fn one_trait_test() {
         }
 
         #[commutative]
-        impl for <i32, f32>
+        impl for <[i8, i16, i32, i64, i128], f32>
         {
             fn min_max(val: i32, com_min: &#A, com_max: &#B) -> Result<i32, String> {
                 if (val as #A) < *com_min {Ok(*com_min as i32)} else
@@ -117,5 +118,36 @@ fn one_trait_test() {
     assert_eq!(format!("{}", val), "14");
 
     let val = multiply(&2, &7);
+    assert_eq!(format!("{}", val), "14");
+}
+
+#[test]
+fn three_dyn_args_test() {
+
+    double_dyn_fn!{
+        type A: MyTrait: std::fmt::Display;
+        type B: MyTrait;
+
+        fn multiply(other: &dyn MyTrait, a: &dyn MyTrait, b: &dyn MyTrait) -> Box<dyn MyTrait>;
+
+        impl for <i32, i32>
+        {
+            fn multiply(_other: &dyn MyTrait, same_a: &i32, same_b: &i32) -> Box<dyn MyTrait> {
+                Box::new(*same_a * *same_b)
+            }
+        }
+
+        impl for <i32, f32>
+        {
+            fn multiply(_other: &dyn MyTrait, a: &i32, b: &f32) -> Box<dyn MyTrait> {
+                Box::new((*a as #B) * *b)
+            }
+        }
+    }
+
+    let val = multiply(&0, &2, &7.5);
+    assert_eq!(format!("{}", val), "15");
+
+    let val = multiply(&0, &2, &7);
     assert_eq!(format!("{}", val), "14");
 }

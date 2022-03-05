@@ -22,17 +22,7 @@ permutations need to be defined in one block, which feels pretty limiting.
 Does anyone have a good work around for the lack of https://github.com/rust-lang/rust/issues/44034 
 
 
-
-
-
-
-
-//TODO, have a test case for passing a third dyn trait arg that isn't either A or B
-
-//TODO, write a blurb about how args are identified
-
-//TODO, Test multiple types in an array
-
+//TODO.  Rename double_dyn from double_dyn_fn
 
 Tags:
 "multimethods" "multimethod" "dyn" "argument" "dispatch" "multiple" "dynamic" "parameters" "arguments" "object" "oriented"
