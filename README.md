@@ -87,7 +87,7 @@ You may declare multiple functions within the same `double_dyn_fn` macro invocat
 
 - All `impls` must be in the same `double_dyn_fn` macro invocation along with the definitions.  I'd like to be able to support separating declarations from implementations and allow additional `impls` to be added as appropriate, but I don't have a robust method to communicate between each macro invocation.  This is blocked on [this issue](https://github.com/rust-lang/rust/issues/44034).
 
-- Each ``double_dyn_fn` macro invocation defines a trait or pair of traits.  This macro isn't designed to add methods to existing traits.  It is possible to use this macro to define a trait, and then make that trait a supertrait of another trait you define, thus allowing double-dyn methods on your trait.  But the lack of [trait upcasting](https://github.com/rust-lang/rust/issues/65991) in the stable compiler is still limiting.  Please contact me if you have an idea for how to make things better for adding methods to existing traits.
+- Each `double_dyn_fn` macro invocation defines a trait or pair of traits.  This macro isn't designed to add methods to existing traits.  It is possible to use this macro to define a trait, and then make that trait a supertrait of another trait you define, thus allowing double-dyn methods on your trait.  But the lack of [trait upcasting](https://github.com/rust-lang/rust/issues/65991) in the stable compiler is still limiting.  Please contact me if you have an idea for how to make things better for adding methods to existing traits.
 
 - Functions may not have generic arguments.  This is a fundamental limitation based on the fact that functions are transformed into trait methods, and the traits need to remain object-safe.
 
@@ -101,7 +101,9 @@ You may declare multiple functions within the same `double_dyn_fn` macro invocat
 
 # Future Vision
 
+I would like to allow the addition of new function implementations via `impl` blocks that aren't part of the original invocation.  In other words, to allow the function signatures to be in part of the code, and allow additional implementations to be added elsewhere.  Unfortunately I don't believe this is possible on account of Rust not having an ability to communicate between macro invocations.  This is discussed [here](https://github.com/rust-lang/rust/issues/44034).
 
+I would also like to include more flexibility for implementing methods on existing traits.  See the [Limitations](#limitations) section above.  I am open to suggestions about what you would find useful.
 
 # Acknowledgments
 

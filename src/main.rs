@@ -5,7 +5,7 @@
 //√3. Functions where both dyns are of the same type as well as functions where A and B have different types
 //4. Adding additional pairs across multiple impl blocks
 //√5. Multiple function within the same block?
-//6. Test that it works with and without pub
+//√6. Test that it works with and without pub
 
 /*
 
