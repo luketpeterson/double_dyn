@@ -10,9 +10,9 @@ mod parse;
 use crate::parse::*;
 
 #[proc_macro]
-pub fn double_dyn_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn double_dyn(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
-    let output = match double_dyn_fn_internal(input.into()) {
+    let output = match double_dyn_internal(input.into()) {
         Ok(expanded) => expanded,
         Err(error) => error.into_compile_error(),
     };
@@ -20,7 +20,7 @@ pub fn double_dyn_fn(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
     output.into()
 }
 
-fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError> {
+fn double_dyn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError> {
 
     //==================================================================================================================
     // PHASE 1: Parse the Macro Invocation

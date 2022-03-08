@@ -13,20 +13,10 @@ Is there some reason that this won't work for a use case that you'd like to see 
 
 I did my best to catch as many errors as I could envision and provide reasonable error messages.  But I may have missed some.
 
-
-
-
 Unfortunately this isn't nearly as powerful as I'd like it to be.  Specifically, all of the
 permutations need to be defined in one block, which feels pretty limiting.
 
 Does anyone have a good work around for the lack of https://github.com/rust-lang/rust/issues/44034 
-
-
-//TODO.  Rename double_dyn from double_dyn_fn
-
-Tags:
-"multimethods" "multimethod" "dyn" "argument" "dispatch" "multiple" "dynamic" "parameters" "arguments" "object" "oriented"
-
 
 */
 

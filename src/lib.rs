@@ -5,7 +5,7 @@
 
 //re-export the macro from double_dyn_macros
 /// Emits traits and functions to enable multiple dynamic argument dispatch
-pub use double_dyn_macros::double_dyn_fn;
+pub use double_dyn_macros::double_dyn;
 
 //=====================================================================================
 // Top-Level Tests
@@ -14,7 +14,7 @@ pub use double_dyn_macros::double_dyn_fn;
 #[test]
 fn separate_traits_test() {
 
-    double_dyn_fn!{
+    double_dyn!{
         type A: MyTraitA;
         type B: MyTraitB: std::fmt::Display;
     
@@ -64,7 +64,7 @@ fn separate_traits_test() {
 #[test]
 fn one_trait_test() {
 
-    double_dyn_fn!{
+    double_dyn!{
         type A: MyTrait: std::fmt::Display;
         type B: MyTrait;
 
@@ -124,7 +124,7 @@ fn one_trait_test() {
 #[test]
 fn three_dyn_args_test() {
 
-    double_dyn_fn!{
+    double_dyn!{
         type A: MyTrait: std::fmt::Display;
         type B: MyTrait;
 
@@ -155,7 +155,7 @@ fn three_dyn_args_test() {
 #[test]
 fn pub_qualifier_test() {
 
-    double_dyn_fn!{
+    double_dyn!{
         type A: MyTraitA: std::fmt::Display;
         type B: MyTraitB;
     
@@ -176,7 +176,7 @@ fn pub_qualifier_test() {
 #[test]
 fn arg_position_inference_test() {
 
-    double_dyn_fn!{
+    double_dyn!{
         type A: MyTrait: std::fmt::Display;
         type B: MyTrait;
 

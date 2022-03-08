@@ -1,7 +1,7 @@
 
 Provides a macro for implementing functions with [multiple dynamic argument dispatch](https://en.wikipedia.org/wiki/Multiple_dispatch) at runtime.
 
-The [double_dyn_fn] macro will define the specified trait(s) and emit implementations for all of the provided types, and then emit functions that call the appropriate implementation.
+The [double_dyn] macro will define the specified trait(s) and emit implementations for all of the provided types, and then emit functions that call the appropriate implementation.
 
 # Usage
 
@@ -13,7 +13,7 @@ I intend to publish on crates.io once I get some feedback that this crate is use
 double-dyn = { git = "https://github.com/luketpeterson/double-dyn" }
 ```
 ## Basics
-The `double_dyn_fn` macro invocation has 3 parts.
+The `double_dyn` macro invocation has 3 parts.
 
 1. Trait names for the `A` and `B` traits, along with any subtrait bounds
 2. Function prototypes
@@ -22,9 +22,9 @@ The `double_dyn_fn` macro invocation has 3 parts.
 ## Examples
 
 ```rust
-use double_dyn::double_dyn_fn;
+use double_dyn::double_dyn;
 
-double_dyn_fn!{
+double_dyn!{
     type A: MyTraitA;
     type B: MyTraitB: std::fmt::Display;
 
@@ -56,8 +56,8 @@ As you can see above, multiple `A` and/or `B` types may be specified in using a 
 You may use the concrete types explicitly Within the `impl` block, or alternatively, `#A` and `#B` markers can be used as aliases within the function signature and implementation body, and they will be replaced by the type(s) they represent at compile time.
 
 ```rust
-# use double_dyn::double_dyn_fn;
-double_dyn_fn!{
+# use double_dyn::double_dyn;
+double_dyn!{
     type A: MyTrait: std::fmt::Display;
     type B: MyTrait;
 
@@ -81,13 +81,13 @@ The `#[commutative]` attribute will cause an additional implementation to be gen
 
 In the case where the `A` and `B` trait is the same, the bounds from the `A` trait take precedence.
 
-You may declare multiple functions within the same `double_dyn_fn` macro invocation, and all functions will use the same trait(s).  However, every declared function must be implemented in each `impl` block.
+You may declare multiple functions within the same `double_dyn` macro invocation, and all functions will use the same trait(s).  However, every declared function must be implemented in each `impl` block.
 
 # Limitations
 
-- All `impls` must be in the same `double_dyn_fn` macro invocation along with the definitions.  I'd like to be able to support separating declarations from implementations and allow additional `impls` to be added as appropriate, but I don't have a robust method to communicate between each macro invocation.  This is blocked on [this issue](https://github.com/rust-lang/rust/issues/44034).
+- All `impls` must be in the same `double_dyn` macro invocation along with the definitions.  I'd like to be able to support separating declarations from implementations and allow additional `impls` to be added as appropriate, but I don't have a robust method to communicate between each macro invocation.  This is blocked on [this issue](https://github.com/rust-lang/rust/issues/44034).
 
-- Each `double_dyn_fn` macro invocation defines a trait or pair of traits.  This macro isn't designed to add methods to existing traits.  It is possible to use this macro to define a trait, and then make that trait a supertrait of another trait you define, thus allowing double-dyn methods on your trait.  But the lack of [trait upcasting](https://github.com/rust-lang/rust/issues/65991) in the stable compiler is still limiting.  Please contact me if you have an idea for how to make things better for adding methods to existing traits.
+- Each `double_dyn` macro invocation defines a trait or pair of traits.  This macro isn't designed to add methods to existing traits.  It is possible to use this macro to define a trait, and then make that trait a supertrait of another trait you define, thus allowing double-dyn methods on your trait.  But the lack of [trait upcasting](https://github.com/rust-lang/rust/issues/65991) in the stable compiler is still limiting.  Please contact me if you have an idea for how to make things better for adding methods to existing traits.
 
 - Functions may not have generic arguments.  This is a fundamental limitation based on the fact that functions are transformed into trait methods, and the traits need to remain object-safe.
 
