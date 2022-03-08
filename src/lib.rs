@@ -151,3 +151,45 @@ fn three_dyn_args_test() {
     let val = multiply(&0, &2, &7);
     assert_eq!(format!("{}", val), "14");
 }
+
+#[test]
+fn pub_qualifier_test() {
+
+    double_dyn_fn!{
+        type A: MyTraitA: std::fmt::Display;
+        type B: MyTraitB;
+    
+        pub(crate) fn multiply(a: &dyn MyTraitA, b: &dyn MyTraitB) -> Box<dyn MyTraitA>;
+    
+        impl for <i32, i32>
+        {
+            fn multiply(same_a: &i32, same_b: &i32) -> Box<dyn MyTraitA> {
+                Box::new(*same_a * *same_b)
+            }
+        }
+    }
+    
+    let val = multiply(&2, &7);
+    assert_eq!(format!("{}", val), "14");
+}
+
+#[test]
+fn arg_position_inference_test() {
+
+    double_dyn_fn!{
+        type A: MyTrait: std::fmt::Display;
+        type B: MyTrait;
+
+        fn multiply(_junk: &dyn MyTrait, a: &dyn MyTrait, _more_junk: &i32, b: &dyn MyTrait, _yet_more_junk: &i32) -> Box<dyn MyTrait>;
+        
+        impl for <i32, i32>
+        {
+            fn multiply(_junk: &dyn MyTrait, alt_name_a: &i32, _more_junk: &i32, alt_name_b: &i32, _yet_more_junk: &i32) -> Box<dyn MyTrait> {
+                Box::new(*alt_name_a * *alt_name_b)
+            }
+        }
+    }
+    
+    let val = multiply(&2, &3, &5, &7, &11);
+    assert_eq!(format!("{}", val), "21");
+}

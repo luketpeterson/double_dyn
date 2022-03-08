@@ -198,7 +198,17 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
             }
 
             //Check that this implementation name matches one of the signatures defined above
-            if let Some((_template_sig, possible_a_args, possible_b_args)) = fn_sigs.get_mut(&sig.fn_name.to_string()) {
+            if let Some((template_sig, possible_a_args, possible_b_args)) = fn_sigs.get_mut(&sig.fn_name.to_string()) {
+
+                //Make sure the argument count matches the function template.  NOTE: You might think this check is unnecessary
+                // because we'd catch incompatible args later on, but we want to be able to rely on the argument list being the
+                // same length when manipulting the args array later on, before emitting the tokens to be compiled.
+                if template_sig.args.len() != sig.args.len() {
+                    return Err(SyntaxError {
+                        message: format!("argument count doesn't match signiture"),
+                        span: sig.fn_name.span(),
+                    });
+                }
 
                 //Make sure we can correlate the arg positions for the A and B types
                 for (i, arg) in sig.args.iter().enumerate() {
@@ -411,32 +421,8 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
 
         //Create a separate variant of each function for each of the A types
         for a_type_string in type_a_map.keys() {
-            
-            //Turns "fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;" into
-            // "fn l2_min_max_i32(&self, val: i32, min: &i32) -> Result<i32, String>;"
-            let mut new_sig = sig.clone();
-            new_sig.pub_qualifiers = TokenStream::new(); //no visibility qualifiers on trait methods
-            new_sig.fn_name = Ident::new(&format!("l2_{}_{}", fn_name, a_type_string), sig.fn_name.span());
-            //Remove the A and B args because we'll replace them.  But we need to remove them in the right order
-            // because we don't want to screw up the indices
-            let old_a_arg = if possible_a_args[0] < possible_b_args[0] {
-                new_sig.args.remove(possible_b_args[0]);
-                new_sig.args.remove(possible_a_args[0])
-            } else {
-                let old_a_arg = new_sig.args.remove(possible_a_args[0]);
-                new_sig.args.remove(possible_b_args[0]);
-                old_a_arg
-            };
-            new_sig.args.insert(0, FnArg{
-                arg_name: None,
-                arg_type: quote! { &self }
-            });
-            let type_a_tokens = type_a_map.get(a_type_string).unwrap().clone();
-            new_sig.args.push(FnArg{
-                arg_name: old_a_arg.arg_name,
-                arg_type: quote! { &#type_a_tokens }
-            });
 
+            let (new_sig, _old_b_arg) = transmute_to_l2_signature(sig.clone(), a_type_string, &type_a_map, possible_a_args[0], possible_b_args[0])?;
             let sig_tokens = render_fn_signature(new_sig.clone())?;
             l2_sigs.insert((fn_name, a_type_string), (new_sig, sig_tokens.clone()));
             l2_sig_tokens.extend(sig_tokens);
@@ -474,7 +460,7 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
         let l2_impls_single_trait = if single_trait {
             let mut l2_impls = TokenStream::new();
             for b_type_name in type_b_map.keys() {
-                let impl_tokens = render_l2_fns_for_pair(b_type_name, a_type_name, &pairs_map, &fn_sigs, &l2_sigs)?;
+                let impl_tokens = render_l2_fns_for_pair(b_type_name, a_type_name, &pairs_map, &type_a_map, &fn_sigs, &l2_sigs)?;
                 l2_impls.extend(impl_tokens);
             }
             l2_impls
@@ -531,7 +517,7 @@ fn double_dyn_fn_internal(input: TokenStream) -> Result<TokenStream, SyntaxError
 
             let mut l2_impls = TokenStream::new();
             for a_type_name in type_a_map.keys() {
-                let impl_tokens = render_l2_fns_for_pair(a_type_name, b_type_name, &pairs_map, &fn_sigs, &l2_sigs)?;
+                let impl_tokens = render_l2_fns_for_pair(a_type_name, b_type_name, &pairs_map, &type_a_map, &fn_sigs, &l2_sigs)?;
                 l2_impls.extend(impl_tokens);
             }
 
@@ -609,6 +595,7 @@ fn render_l2_fns_for_pair(
     a_type_name: &String,
     b_type_name: &String,
     pairs_map: &HashMap<String, HashMap<String, HashMap<String, (FnSignature, TokenStream)>>>,
+    type_a_map: &HashMap<String, TokenStream>,
     fn_sigs: &HashMap<String, (FnSignature, Vec<usize>, Vec<usize>)>,
     l2_sigs: &HashMap<(&String, &String), (FnSignature, TokenStream)>) -> Result<TokenStream, SyntaxError> {
 
@@ -618,27 +605,17 @@ fn render_l2_fns_for_pair(
         if let Some(pair_fn_map) = a_pair_map.get(b_type_name) {
 
             //Emit methods with the body from the macro invocation 
-            for (orig_fn_name, (_sig, _possible_a_args, possible_b_args)) in fn_sigs.iter() {
+            for (orig_fn_name, (_sig, possible_a_args, possible_b_args)) in fn_sigs.iter() {
 
                 let (pair_fn_sig, pair_fn_body) = pair_fn_map.get(orig_fn_name).unwrap();
-
-                //Turns "fn min_max(val: i32, min: &i32) -> Result<i32, String>;" into
-                // "fn l2_min_max_i32(&self, val: i32, min: &i32) -> Result<i32, String>;"
-                let mut new_sig = pair_fn_sig.clone();
-                new_sig.fn_name = Ident::new(&format!("l2_{}_{}", orig_fn_name, a_type_name), pair_fn_sig.fn_name.span());
-                //Remove the B arg and replace it with self
-                let old_arg = new_sig.args.remove(possible_b_args[0]);    
-                new_sig.args.insert(0, FnArg{
-                    arg_name: None,
-                    arg_type: quote! { &self }
-                });
+                let (new_sig, old_b_arg) = transmute_to_l2_signature(pair_fn_sig.clone(), a_type_name, type_a_map, possible_a_args[0], possible_b_args[0])?;
                 let sig_tokens = render_fn_signature(new_sig)?;
                 l2_impls.extend(sig_tokens);
 
                 //Emit an assignment, to assign self back to the original argument name
-                let old_arg_name = old_arg.arg_name.clone().unwrap();
+                let old_b_arg_name = old_b_arg.arg_name.clone().unwrap();
                 let self_assignment_tokens = quote! {
-                    let #old_arg_name = self;
+                    let #old_b_arg_name = self;
                 };
 
                 l2_impls.extend(quote! {
@@ -683,6 +660,38 @@ fn render_l2_fns_for_pair(
     }
 
     Ok(l2_impls)
+}
+
+//Turns "fn min_max(val: i32, min: &dyn MyTraitA, max: &dyn MyTraitB) -> Result<i32, String>;" into
+// "fn l2_min_max_i32(&self, val: i32, min: &i32) -> Result<i32, String>;"
+fn transmute_to_l2_signature(original_sig: FnSignature, a_type_string: &String, type_a_map: &HashMap<String, TokenStream>, a_arg_idx: usize, b_arg_idx: usize) -> Result<(FnSignature, FnArg), SyntaxError> {
+
+    let new_fn_name = Ident::new(&format!("l2_{}_{}", original_sig.fn_name.to_string(), a_type_string), original_sig.fn_name.span());
+    let mut new_sig = original_sig;
+    new_sig.pub_qualifiers = TokenStream::new(); //no visibility qualifiers on trait methods
+    new_sig.fn_name = new_fn_name;
+    //Remove the A and B args because we'll replace them.  But we need to remove them in the right order
+    // because we don't want to screw up the indices
+    let (old_a_arg, old_b_arg) = if a_arg_idx < b_arg_idx {
+        let old_b_arg = new_sig.args.remove(b_arg_idx);
+        let old_a_arg = new_sig.args.remove(a_arg_idx);
+        (old_a_arg, old_b_arg)
+    } else {
+        let old_a_arg = new_sig.args.remove(a_arg_idx);
+        let old_b_arg = new_sig.args.remove(b_arg_idx);
+        (old_a_arg, old_b_arg)
+    };
+    new_sig.args.insert(0, FnArg{
+        arg_name: None,
+        arg_type: quote! { &self }
+    });
+    let type_a_tokens = type_a_map.get(a_type_string).unwrap().clone();
+    new_sig.args.push(FnArg{
+        arg_name: old_a_arg.arg_name,
+        arg_type: quote! { &#type_a_tokens }
+    });
+
+    Ok((new_sig, old_b_arg))
 }
 
 //Replaces "#A" and "#B" placeholders with the tokens representing concrete types
