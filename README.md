@@ -10,7 +10,7 @@ I intend to publish on crates.io once I get some feedback that this crate is use
 
 ```toml
 [dependencies]
-double-dyn = { git = "https://github.com/luketpeterson/double-dyn" }
+double-dyn = { git = "https://github.com/luketpeterson/double_dyn" }
 ```
 ## Basics
 The `double_dyn` macro invocation has 3 parts.
