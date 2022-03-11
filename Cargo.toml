@@ -13,5 +13,5 @@ categories = ["rust-patterns", "development-tools::procedural-macro-helpers"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-double-dyn-macros = {path = "./double-dyn-macros"}
+double-dyn-macros = {path = "./double-dyn-macros", version = "0.1.0"}
 
