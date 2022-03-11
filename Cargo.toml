@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 description = "Macro for implementing functions with multiple dynamic argument dispatch"
 repository = "https://github.com/luketpeterson/double-dyn/"
 readme = "README.md"
-keywords = ["multimethod", "dyn", "dispatch", "multiple", "dynamic", "object-oriented"]
+keywords = ["multimethod", "multiple", "dyn", "dispatch", "object-oriented"]
 categories = ["rust-patterns", "development-tools::procedural-macro-helpers"]
 
 [lib]
