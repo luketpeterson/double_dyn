@@ -1,7 +1,7 @@
 
 Provides a macro for implementing functions with [multiple dynamic argument dispatch](https://en.wikipedia.org/wiki/Multiple_dispatch) at runtime.
 
-The [double_dyn] macro will define the specified trait(s) and emit implementations for all of the provided types, and then emit functions that call the appropriate implementation.
+The [double_dyn!] macro will define the specified trait(s) and emit implementations for all of the provided types, and then emit functions that call the appropriate implementation.
 
 # Usage
 
@@ -13,7 +13,7 @@ I intend to publish on crates.io once I get some feedback that this crate is use
 double-dyn = { git = "https://github.com/luketpeterson/double_dyn" }
 ```
 ## Basics
-The `double_dyn` macro invocation has 3 parts.
+The `double_dyn!` macro invocation has 3 parts.
 
 1. Trait names for the `A` and `B` traits, along with any subtrait bounds
 2. Function prototypes

@@ -10,8 +10,10 @@ readme = "README.md"
 keywords = ["multimethods", "multimethod", "dyn", "argument", "dispatch", "multiple", "dynamic", "parameters", "arguments", "object", "oriented", "object-oriented"]
 categories = ["rust-patterns", "development-tools::procedural-macro-helpers"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
 
 [dependencies]
-double-dyn-macros = {path = "./double-dyn-macros", version = "0.1.0"}
-
+proc-macro2 = "1.0.*"
+quote = "^1.0"
+heck = "0.4.0"
