@@ -1,11 +1,11 @@
 [package]
 name = "double-dyn"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Luke Peterson <luke@infoplatter.com>"]
 license = "MIT OR Apache-2.0"
 description = "Macro for implementing functions with multiple dynamic argument dispatch"
-repository = "https://github.com/luketpeterson/double-dyn/"
+repository = "https://github.com/luketpeterson/double_dyn/"
 readme = "README.md"
 keywords = ["multimethod", "multiple", "dyn", "dispatch", "object-oriented"]
 categories = ["rust-patterns", "development-tools::procedural-macro-helpers"]

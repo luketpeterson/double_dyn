@@ -6,11 +6,9 @@ The [double_dyn!] macro will define the specified trait(s) and emit implementati
 # Usage
 
 ## In your Cargo.toml
-I intend to publish on crates.io once I get some feedback that this crate is useful.  For now it can be pulled directly from github.
-
 ```toml
 [dependencies]
-double-dyn = { git = "https://github.com/luketpeterson/double_dyn" }
+double-dyn = "0.1.1"
 ```
 ## Basics
 The `double_dyn!` macro invocation has 3 parts.
@@ -82,6 +80,8 @@ The `#[commutative]` attribute will cause an additional implementation to be gen
 In the case where the `A` and `B` trait is the same, the bounds from the `A` trait take precedence.
 
 You may declare multiple functions within the same `double_dyn` macro invocation, and all functions will use the same trait(s).  However, every declared function must be implemented in each `impl` block.
+
+Additional usage examples can be found [here in the tests.](https://github.com/luketpeterson/double_dyn/blob/master/tests/tests.rs)
 
 # Limitations
 
